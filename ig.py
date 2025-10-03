@@ -1,25 +1,27 @@
 import re
 import pandas as pd
+import requests
 
-# এখানে তোমার পুরো টেক্সট ব্লক পেস্ট করবে
-raw_text = """তুমি যে বড় টেক্সট ব্লকটা পাঠিয়েছো সেটা এখানে বসাও"""
+# GitHub থেকে ডেটা টানার অপশন
+use_github = input("GitHub থেকে ডেটা আনবেন? (y/n): ").lower()
 
-# Regex দিয়ে Email, Password, 2FA Key, Username এক্সট্রাক্ট
-pattern = re.compile(
-    r"Email\s*:\s*([^\s]+).*?"
-    r"Password\s*:\s*([^\s]+).*?"
-    r"2FA Key\s*:\s*([A-Z0-9 ]+).*?"
-    r"usernameusername\s*:\s*([^\s]+)",
-    re.DOTALL
-)
+if use_github == "y":
+    github_url = input("GitHub ফাইলের raw URL দিন (যেমন https://raw.githubusercontent.com/username/repo/main/data.txt): ")
+    response = requests.get(github_url)
+    raw_text = response.text
+else:
+    file_path = input("ডেটা থাকা ফাইলের path লিখুন (যেমন data.txt): ")
+    with open(file_path, "r", encoding="utf-8") as f:
+        raw_text = f.read()
 
-matches = pattern.findall(raw_text)
+# Regex দিয়ে তথ্য টানা
+pattern = r"Email\s+: (.+)\nPassword\s+: (.+)\n2FA Key\s+: (.+)\n2FA Code\s+: (.+)\nUser id\s+: (.+)\nusernameusername\s+: (.+)"
+matches = re.findall(pattern, raw_text)
 
-# DataFrame বানানো
-df = pd.DataFrame(matches, columns=["Email", "Password", "2FA Key", "Username"])
+# ডেটাকে DataFrame এ রূপান্তর
+df = pd.DataFrame(matches, columns=["Email", "Password", "2FA Key", "2FA Code", "User ID", "Username"])
 
-# এক্সেল আউটপুট
-df.to_excel("accounts.xlsx", index=False)
-
-print("✅ এক্সেল ফাইল তৈরি হয়েছে: accounts.xlsx")
-print(df.head())
+# Excel এ সেভ করা
+output_file = input("এক্সেল ফাইলের নাম লিখুন (যেমন accounts.xlsx): ")
+df.to_excel(output_file, index=False)
+print(f"ডেটা '{output_file}' ফাইলে সেভ হয়েছে।")
